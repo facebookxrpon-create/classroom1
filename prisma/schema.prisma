@@ -1,0 +1,87 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String          @id @default(cuid())
+  email         String          @unique
+  name          String?
+  googleAccount GoogleAccount?
+  tasks         Task[]
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+}
+
+model GoogleAccount {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  googleUserId String   @unique
+  accessToken  String
+  refreshToken String
+  tokenExpiry  DateTime
+  user         User     @relation(fields: [userId], references: [id])
+}
+
+model Course {
+  id          String   @id @default(cuid())
+  classroomId String   @unique
+  name        String
+  description String?
+  userId      String
+  tasks       Task[]
+  user        User     @relation(fields: [userId], references: [id])
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  SUBMITTED
+  LATE
+  COMPLETED
+}
+
+enum TaskSource {
+  USER
+  CLASSROOM
+}
+
+model Task {
+  id                String          @id @default(cuid())
+  userId            String
+  courseId          String?
+  title             String
+  description       String?
+  createdAt         DateTime        @default(now())
+  dueDateClassroom  DateTime?
+  dueDateDetected   DateTime?
+  dueDateConfirmed  DateTime?
+  status            TaskStatus      @default(PENDING)
+  source            TaskSource      @default(USER)
+  priority          Int             @default(0)
+  externalLink      String?
+  notes             TaskNote[]
+  user              User            @relation(fields: [userId], references: [id])
+  course            Course?         @relation(fields: [courseId], references: [id])
+}
+
+model TaskNote {
+  id        String   @id @default(cuid())
+  taskId    String
+  content   String
+  createdAt DateTime @default(now())
+  task      Task     @relation(fields: [taskId], references: [id])
+}
+
+model DetectedDate {
+  id         String   @id @default(cuid())
+  taskId     String
+  sourceText String
+  date       DateTime
+  createdAt  DateTime @default(now())
+  task       Task     @relation(fields: [taskId], references: [id])
+}

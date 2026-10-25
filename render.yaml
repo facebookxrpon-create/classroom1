@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: classtask-backend
+    env: node
+    plan: starter
+    buildCommand: |
+      cd backend && npm install && npm run build
+      cd ../frontend && npm install && npm run build
+    startCommand: |
+      cd backend && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: SESSION_SECRET
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: FRONTEND_URL
+        value: https://classtask-backend.onrender.com
+    autoDeploy: true
+    healthCheckPath: /health
+    pullRequestPreviewsEnabled: true
