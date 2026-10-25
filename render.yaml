@@ -3,33 +3,49 @@ services:
   - type: web
     name: classtask-backend
     env: node
-    plan: free   # ฟรี tier ของ Render มี 1 web service
+    plan: free               # ใช้ Free tier (1 Web Service ฟรี)
     branch: main
     repo: https://github.com/facebookxrpon-create/classroom1.git
-    rootDir: backend
-    buildCommand: npm ci && npm run build   # หรือ npm run start ถ้าไม่มี build script
-    startCommand: npm start
+    rootDir: backend          # โฟลเดอร์ที่มีไฟล์ package.json ของ backend
+    buildCommand: |
+      # 1️⃣ ติดตั้งและคอมไพล์ Backend
+      npm ci
+      npm run build
+      # 2️⃣ ติดตั้งและคอมไพล์ Frontend (เพื่อให้ไฟล์สแตติกอยู่ที่ ../../frontend/dist)
+      cd ../frontend
+      npm ci
+      npm run build
+    startCommand: |
+      # Backend เริ่มจากไฟล์ที่คอมไพล์แล้ว (dist/index.js)
+      cd backend
+      npm start
     healthCheckPath: /health
     envVars:
       - key: NODE_ENV
         value: production
       - key: SESSION_SECRET
-        sync: false        # ให้คุณตั้งค่าใน UI ของ Render
+        sync: false                     # secret
       - key: GOOGLE_CLIENT_ID
-        sync: false
+        sync: false                     # secret
       - key: GOOGLE_CLIENT_SECRET
-        sync: false
+        sync: false                     # secret
       - key: DATABASE_URL
-        sync: false
+        sync: false                     # จะถูกเพิ่มโดย PostgreSQL Add‑on
       - key: FRONTEND_URL
-        sync: false        # จะตั้งค่าเป็น URL ของ static site หลังสร้าง
+        sync: false                     # จะตั้งค่าเป็น URL ของ static site หลังสร้าง
+    autoDeploy: true
+    pullRequestPreviewsEnabled: true
 
   # ---------- 2️⃣ Front‑end Static Site ----------
   - type: static
     name: classtask-frontend
+    env: node
+    plan: free               # ฟรี tier (1 static site ฟรี)
     branch: main
     repo: https://github.com/facebookxrpon-create/classroom1.git
-    rootDir: frontend            # โฟลเดอร์ที่มี package.json ของ React/Vite
+    rootDir: frontend        # โฟลเดอร์ที่มี package.json ของ React/Vite
     buildCommand: npm ci && npm run build
-    publishPath: dist            # Vite สร้างไฟล์ที่โฟลเดอร์ dist
-    envVars: []                  # ไม่ต้องมี secret สำหรับ static site
+    publishPath: dist        # Vite สร้างไฟล์ที่โฟลเดอร์ dist
+    envVars: []              # ไม่ต้องมี secret สำหรับ static site
+    autoDeploy: true
+    # (Static site ไม่ต้อง healthCheckPath)
