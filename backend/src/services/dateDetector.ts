@@ -1,6 +1,6 @@
 // backend/src/services/dateDetector.ts
 import { isValid, parse } from "date-fns";
-import { zonedTimeToUtc } from "date-fns-tz";
+import { fromZonedTime as zonedTimeToUtc } from "date-fns-tz";
 
 const TIMEZONE = "Asia/Bangkok";
 

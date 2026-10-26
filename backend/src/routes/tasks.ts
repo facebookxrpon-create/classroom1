@@ -36,9 +36,35 @@ router.get("/", async (req, res) => {
 router.post("/", async (req, res) => {
   const userId = getUserId(req);
   const { title, description, courseId, source, externalLink, priority } = req.body;
+
+  if (!title) return res.status(400).json({ error: "title is required" });
+
+  // Attempt to detect a due date from the description or title
+  const detected = detectDueDate(`${title} ${description ?? ""}`);
+
   const newTask = await prisma.task.create({
-    data: { title, description, courseId, userId, source, externalLink, priority },
+    data: {
+      userId,
+      title,
+      description,
+      courseId: courseId || undefined,
+      source: source === "CLASSROOM" ? "CLASSROOM" : "USER",
+      externalLink,
+      priority: typeof priority === "number" ? priority : 0,
+      dueDateDetected: detected ? detected.date : undefined,
+    },
   });
+
+  // Store the auto-detected date (if any) as a DetectedDate record
+  if (detected) {
+    await prisma.detectedDate.create({
+      data: {
+        taskId: newTask.id,
+        sourceText: detected.raw,
+        date: detected.date,
+      },
+    });
+  }
   res.status(201).json(newTask);
 });
 
@@ -52,8 +78,10 @@ router.patch("/:id", async (req, res) => {
   if (dueDateConfirmed) updateData.dueDateConfirmed = new Date(dueDateConfirmed);
   if (status) updateData.status = status;
 
+  const existing = await prisma.task.findUnique({ where: { id } });
+  if (!existing || existing.userId !== userId) return res.status(404).json({ error: "Not found" });
   const task = await prisma.task.update({
-    where: { id, userId },
+    where: { id },
     data: updateData,
   });
 
